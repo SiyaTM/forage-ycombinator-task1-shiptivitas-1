@@ -4,7 +4,7 @@ import 'dragula/dist/dragula.css';
 import Swimlane from './Swimlane';
 import './Board.css';
 
-export default class Board extends React.Component {
+class Board extends React.Component {
   constructor(props) {
     super(props);
     const clients = this.getClients();
@@ -21,6 +21,71 @@ export default class Board extends React.Component {
       complete: React.createRef(),
     }
   }
+
+  componentDidMount() {
+    // Initialize Dragula for swimlanes
+    this.dragulaInstance = Dragula([
+      this.swimlanes.backlog.current,
+      this.swimlanes.inProgress.current,
+      this.swimlanes.complete.current,
+    ]);
+
+    // Handle drop event
+    this.dragulaInstance.on('drop', (el, target, source, sibling) => {
+      // Rearrange cards within the same swimlane
+      if (target === source) {
+        const swimlaneName = target.dataset.swimlane;
+        const updatedClients = { ...this.state.clients };
+        updatedClients[swimlaneName] = this.reorderCards(target.children);
+        this.setState({
+          clients: updatedClients,
+        });
+      } else {
+        // Move card to a different swimlane
+        const sourceSwimlane = source.dataset.swimlane;
+        const targetSwimlane = target.dataset.swimlane;
+        const cardId = el.dataset.id;
+        this.moveCard(sourceSwimlane, targetSwimlane, cardId);
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    // Clean up Dragula in componentWillUnmount
+    if (this.dragulaInstance) {
+      this.dragulaInstance.destroy();
+    }
+  }
+
+  reorderCards(cards) {
+    // Get the order of cards after a drag and drop
+    return Array.from(cards).map(card => ({
+      id: card.dataset.id,
+      name: card.dataset.name,
+      description: card.dataset.description,
+      status: card.dataset.status,
+    }));
+  }
+
+  moveCard(sourceSwimlane, targetSwimlane, cardId) {
+    const updatedClients = { ...this.state.clients };
+    const card = this.findCardInSwimlane(updatedClients, sourceSwimlane, cardId);
+
+    if (card) {
+      card.status = targetSwimlane;
+      updatedClients[sourceSwimlane] = updatedClients[sourceSwimlane].filter(client => client.id !== cardId);
+      updatedClients[targetSwimlane].push(card);
+    }
+
+    this.setState({
+      clients: updatedClients,
+    });
+  }
+
+  findCardInSwimlane(clients, swimlane, cardId) {
+    return clients[swimlane]?.find(client => client.id === cardId);
+  }
+
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -50,9 +115,10 @@ export default class Board extends React.Component {
       status: companyDetails[3],
     }));
   }
+
   renderSwimlane(name, clients, ref) {
     return (
-      <Swimlane name={name} clients={clients} dragulaRef={ref}/>
+      <Swimlane name={name} clients={clients} dragulaRef={ref} />
     );
   }
 
@@ -76,3 +142,5 @@ export default class Board extends React.Component {
     );
   }
 }
+
+export default Board;

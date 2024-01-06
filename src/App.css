@@ -41,3 +41,26 @@
 .nav {
   padding: 12px 48px 0 48px;
 }
+
+/* Add the following styles for the App-body */
+.App-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modify the styles for the navigation */
+.nav {
+  padding: 12px 0; /* Adjust padding */
+}
+
+/* Add styles for the active tab */
+.nav-link.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+/* Add styles for the tab content */
+.tab-content {
+  padding: 16px;
+}
